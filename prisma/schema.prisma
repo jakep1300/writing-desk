@@ -1,0 +1,90 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+enum ProjectType {
+  CREATIVE
+  RESEARCH
+}
+
+model Project {
+  id              String           @id @default(cuid())
+  type            ProjectType
+  title           String
+  createdAt       DateTime         @default(now())
+  sections        Section[]
+  creativeDetails CreativeDetails?
+  researchDetails ResearchDetails?
+  sources         Source[]
+  sessions        WritingSession[]
+}
+
+model Section {
+  id           String           @id @default(cuid())
+  projectId    String
+  project      Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title        String
+  outlineNotes String           @default("")
+  content      Json             @default("{}")
+  status       String           @default("not_started")
+  order        Int
+  sessions     WritingSession[]
+}
+
+model CreativeDetails {
+  id         String  @id @default(cuid())
+  projectId  String  @unique
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  overview   String  @default("")
+  logline    String  @default("")
+  characters String  @default("")
+}
+
+model ResearchDetails {
+  id        String  @id @default(cuid())
+  projectId String  @unique
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  topic     String  @default("")
+  thesis    String  @default("")
+}
+
+model Source {
+  id        String   @id @default(cuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name      String
+  notes     String   @default("")
+  createdAt DateTime @default(now())
+}
+
+model WritingSession {
+  id           String    @id @default(cuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sectionId    String
+  section      Section   @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  sessionSize  String
+  targetWords  Int
+  wordsWritten Int       @default(0)
+  startedAt    DateTime  @default(now())
+  endedAt      DateTime?
+}
+
+model Settings {
+  id           String @id @default("global")
+  smallTarget  Int    @default(250)
+  mediumTarget Int    @default(750)
+  bigTarget    Int    @default(1500)
+}
